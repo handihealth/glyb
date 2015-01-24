@@ -1,0 +1,18 @@
+{
+    "ctx/composer_name": "Nurse Katrina Grimes",
+    "ctx/health_care_facility|id": "9091",
+    "ctx/health_care_facility|name": "Royal Gwent",
+    "ctx/id_namespace": "HOSPITAL-NS",
+    "ctx/id_scheme": "HOSPITAL-NS",
+    "ctx/language": "uk",
+    "ctx/territory": "GB",
+    "ctx/time": "2015-01-24T16:12:46.848+01:00",
+    "neges/notification:0/event_link": "http://",
+    "neges/notification:0/nhs_number": "1234567890",
+    "neges/notification:0/nhs_number|assigner": "NWIS",
+    "neges/notification:0/nhs_number|issuer": "NWIS",
+    "neges/notification:0/nhs_number|type": "NHSNumber",
+    "neges/notification:0/note": "Attended",
+    "neges/notification:0/notification|code": "at0007",
+    "neges/notification:0/patient_name": "Steve Walford"
+}
