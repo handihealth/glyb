@@ -1,5 +1,32 @@
-<ul>
-  <li ng-repeat="trigger in triggers">
-    {{ trigger.title }}
-  </li>
-</ul>
+<div class="row">
+  <div class="col-sm-12">
+    <form class="form">
+      <div class="form-group">
+        <h3>If</h3>
+      </div>
+
+      <div class="form-group">
+        <select class="input-lg" ng-options="trigger.code as trigger.title for trigger in triggers" ng-model="newTrigger">
+        </select>
+      </div>
+
+      <div class="form-group">
+        <h3>Then</h3>
+      </div>
+
+      <div ng-repeat="i in getNumber(getNumberOfActions()) track by $index" class="form-group">
+        <h3 ng-if="$index != 0">And</h3>
+        <select class="input-lg" ng-options="action as action for action in actions" ng-model="newAction">
+        </select>
+        <input class="input-lg" ng-if="newAction != null" type="text" ng-model="newActionValue" placeholder="Enter detail"/>
+      </div>
+      <div class="form-group">
+        <button ng-if="getNumberOfActions() > 1" ng-click="removeAction()" class="btn btn-warning">- Remove action</button>
+        <button ng-click="appendAction()" class="btn btn-success">+ Add action</button>
+      </div>
+      <div class="form-group">
+        <button type="submit" class="btn btn-primary pull-right">Add Rule</button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -509,6 +509,25 @@
             {code: 'AT001', title: 'Attended A&E'},
             {code: 'AT002', title: 'Contacted'},
             {code: 'AT003', title: 'Lab Results returned'}];
+
+          $scope.actions = ['Email', 'SMS'];
+
+          var numberOfActions = 1;
+          $scope.getNumber = function(num) {
+            return new Array(num);
+          };
+
+          $scope.getNumberOfActions = function() {
+            return numberOfActions;
+          }
+
+          $scope.appendAction = function() {
+            numberOfActions++;
+          };
+
+          $scope.removeAction = function() {
+            numberOfActions--;
+          };
         })
         .directive('prettySelect', function () {
             return function (scope, element, attrs) {
