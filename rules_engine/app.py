@@ -2,7 +2,6 @@ import traceback
 import os
 import psycopg2
 import urlparse
-import lxml.etree
 from flask import Flask, Response, request
 from datetime import *
 
