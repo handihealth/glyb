@@ -36,7 +36,6 @@ $(document).ready(function () {
     var ehrId = "6f81d77a-26ef-4cf4-926f-40ccfafd8a1f";
     var username = 'guidemo';
     var password = 'gui?!demo123';
-
     var monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     var sessionId;
 
@@ -657,4 +656,3 @@ $(document).ready(function () {
         });
     });
 });
-

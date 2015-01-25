@@ -192,7 +192,7 @@
                 this.saveValues = function () {
                     console.log("Send this to the API");
                     console.log(this.valueModel);
-                    $http.post('http://gwyb-server.herokuapp.com/trigger', this.valueModel);
+                    $http.post('http://gwyb.herokuapp.com/trigger', this.valueModel);
                     var cr = new CompositionResource(EhrSaveHelper.prepareValueModel(this.valueModel));
                     cr.$add({templateId: this.templateId},
                         function (success) {
@@ -551,7 +551,7 @@
               actions.push(action);
             });
 
-            $http.post('http://gwyb-server.herokuapp.com/rules', {
+            $http.post('http://gwyb.herokuapp.com/rules', {
               nhsid: 7430555,
               at: $scope.formData.atTrigger,
               actions: actions
