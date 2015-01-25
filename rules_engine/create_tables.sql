@@ -48,29 +48,34 @@ insert into recipients values (DEFAULT, NULL, 1);
 
 create table actions (
 	id serial not null primary key,
-	action_code varchar(4),
-	content_id integer,
-	recipient_id integer not null
+    rule_id integer not null,
+	action_code varchar(8),
+    tel_no varchar (20),
+    email varchar(255),
+    payload text 
 );
 
 create table action_content (
 	id serial not null primary key,
-	action_type varchar(4),
+	action_type varchar(8),
 	content text
 );
 	
 create table rules (
 	id serial not null primary key,
-	patient_id integer not null,
-	recipient_id integer not null,
-	event_code varchar(4),
-	action_code varchar(4),
-	action_content_id integer not null
+	nhs_number varchar (10),
+	event_code varchar(8)
 );
 
+insert into rules values (DEFAULT, '157286255', 'AT007');
+insert into rules values (DEFAULT, '157286255', 'AT008');
+
+insert into actions values (DEFAULT, 1, 'EMAIL', '', 'kasjkd@jhjgsd.com', 'This is email to send');
+insert into actions values (DEFAULT, 2, 'SMS', '01234 56788', '', 'This is text to send');
+
 create table char_codes (
-	domain	varchar(4) not null,
-	char_code varchar(4) not null primary key,
+	domain	varchar(8) not null,
+	char_code varchar(8) not null primary key,
 	description varchar (255)
 );
 
@@ -84,9 +89,9 @@ create table event_logs (
 
 insert into char_codes values ('DOM', 'ACTT', 'Action type');
 insert into char_codes values ('DOM', 'EVTT', 'Event type');
-insert into char_codes values ('EVTT', 'ADM', 'Admission');
-insert into char_codes values ('EVTT', 'A&E', 'A & E');
-insert into char_codes values ('EVTT', 'AMB', 'Ambulance');
+insert into char_codes values ('EVTT', 'AT007', 'Admission');
+insert into char_codes values ('EVTT', 'AT008', 'Ambulance');
+insert into char_codes values ('EVTT', 'AT009', 'Lab results');
 insert into char_codes values ('ACTT', 'EML', 'Email');
 insert into char_codes values ('ACTT', 'FAX', 'Fax');
 insert into char_codes values ('ACTT', 'SMS', 'SMS message');
