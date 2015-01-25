@@ -1,9 +1,28 @@
 import traceback
+import json
 import os
 import psycopg2
+import psycopg2.extras
 import urlparse
-from flask import Flask, Response, request
+from flask import Flask, Response, request, render_template
 from datetime import *
+import smtplib
+import sendgrid
+
+from email.mime.text import MIMEText
+from email.mime.image import MIMEImage
+from email.mime.multipart import MIMEMultipart
+
+
+
+
+app = Flask(__name__)
+
+from flask.ext.cors import CORS, cross_origin
+cors = CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
+
+
 
 def get_connection():
     urlparse.uses_netloc.append("postgres")
@@ -19,173 +38,87 @@ def get_connection():
 
     return conn
 
-app = Flask(__name__)
 
 @app.route("/")
 def hello():
     html = 'gwyb - Hello world!!'
     return Response(html, mimetype='text/html')
 
-@app.route('/book', methods=['POST'])
-def book_appointment():
-    try:
-        doc = lxml.etree.fromstring(request.stream.read())
 
-        uuid            = xfirst(doc.xpath('/data/@instance-id'))
-
-        first_name      = xfirst(doc.xpath('/data/Patient/FirstName/text()'))
-        last_name       = xfirst(doc.xpath('/data/Patient/LastName/text()'))
-        nhs_number      = xfirst(doc.xpath('/data/Patient/NHSNumber/text()'))
-        date_of_birth   = xfirst(doc.xpath('/data/Patient/Dob/text()'))
-        tel_no          = xfirst(doc.xpath('/data/Patient/ContactTel/text()'))
-        urgency         = ''
-
-        allergies           = xfirst(doc.xpath('/data/ReferralDetails/Allergies/text()'))
-        medical_history     = xfirst(doc.xpath('/data/ReferralDetails/MedicalHistory/text()'))
-        
-        bleeding_disorders  = xfirst(doc.xpath('/data/ReferralDetails/BleedingDisorders/text()'))
-        medications         = xfirst(doc.xpath('/data/ReferralDetails/Medications/text()'))
-        treatment_requested = xfirst(doc.xpath('/data/ReferralDetails/TreatmentRequested/text()'))
-        parents_aware_flag  = xfirst(doc.xpath('/data/ReferralDetails/ParentsAware/text()'))
-
-        problem_teeth = ''
-        pt_ul               = xfirst(doc.xpath('/data/ReferralDetails/ProblemTeeth/UpperLeft/text()'))
-        pt_ur               = xfirst(doc.xpath('/data/ReferralDetails/ProblemTeeth/UpperRight/text()'))
-        pt_ll               = xfirst(doc.xpath('/data/ReferralDetails/ProblemTeeth/LowerLeft/text()'))
-        pt_lr               = xfirst(doc.xpath('/data/ReferralDetails/ProblemTeeth/LowerRight/text()'))
-
-        if pt_ul != '':
-            problem_teeth += 'Upper-left: ' + pt_ul + "\n"
-        if pt_ur != '':
-            problem_teeth += 'Upper-right: ' + pt_ur + "\n"
-        if pt_ll != '':
-            problem_teeth += 'Lower-left: ' + pt_ll + "\n"
-        if pt_lr != '':
-            problem_teeth += 'Lower-right: ' + pt_lr + "\n"
-
-
-
-        appointment_date, time_of_day    = doc.xpath('/data/Appointment/ApptDate/text()')[0].split()
-    except Exception, err:
-        print "Error parsing XML"
-        print traceback.format_exc()
-
+@cross_origin()
+@app.route('/rules', methods=['GET'])
+def get_rules():
     try:
         with get_connection() as conn:
-            with conn.cursor() as cur:
+            with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+
+
                 query = """
-                  INSERT INTO patients
-                  (first_name, last_name, nhs_number, date_of_birth, tel_no, urgency)
-                  VALUES
-                  (%s, %s, %s, %s, %s, %s)
-			      RETURNING id
+                  SELECT * FROM rules
                 """
-                values = (first_name, last_name, nhs_number, date_of_birth, tel_no, urgency)
-                cur.execute(query, values)
-                patient_id = cur.fetchone()[0]		
-                print "patient_id is %s\n" , patient_id
-    except Exception, err:
-        print "Error writing patient"
-        print traceback.format_exc()
-
-
-    try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                query = """
-                  INSERT INTO referrals
-                  (patient_id, uuid, allergies, medical_history, bleeding_disorders, medications, treatment_requested, parents_aware_flag, problem_teeth, referral_date)
-                  VALUES
-                  (%s, %s, %s, %s, %s, %s, %s, %s, %s, now())
+                query = """ 
+                    SELECT nhs_number, event_code, action_code, email, tel_no, payload 
+                    FROM rules, actions 
+                    where rules.id = actions.rule_id
                 """
-                values = (patient_id, uuid, allergies, medical_history, bleeding_disorders, medications, treatment_requested, parents_aware_flag, problem_teeth)
-                cur.execute(query, values)
-    except Exception, err:
-        print "Error writing referral"
-        print traceback.format_exc()
+                cur.execute(query)
 
-    try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                query = """
-                  INSERT INTO appointments
-                  (patient_id, appointment_date, time_of_day)
-                  VALUES
-                  (%s, %s, %s)
-                """
-                values = (patient_id, appointment_date, time_of_day)
-                cur.execute(query, values)
-    except Exception, err:
-        print "Error writing referral"
-        print traceback.format_exc()
-    return "OK"
+                json_names = ['nhsid', 'at', 'type', 'address', 'number', 'text']
+                records = []
 
-@app.route("/appointments")
-def get_appointments():
-    try:
-        today = datetime.today()
-        print today.strftime("%U")
-
+                #for rec in cur.fetchone():
+                for rec in cur:
+                    json_rec = {}
+                    for i in range(6):
+                        if json_names[i] is not None:
+                            json_rec[json_names[i]] = rec[i]     
     
-        weeknum = datetime.date(today).isocalendar()[1]
+                    records.append(json_rec)
 
+                return json.dumps(records)
+                #return render_template("patients.html", records=records, title = 'Projects')
     except Exception, err:
-        print "Error processing dates"
+        print "Error reading rules"
         print traceback.format_exc()
-    
 
 
+def send_email_heroku (subject, sender, recipient, content):
+    # using SendGrid's Python Library - https://github.com/sendgrid/sendgrid-python
 
-    xml = """
-       <AppointmentList>
-         <Appointment>
-           <ApptDate>01-Oct-2014 (AM)</ApptDate>
-         </Appointment>
-         <Appointment>
-           <ApptDate>01-Oct-2014 (PM)</ApptDate>
-         </Appointment>
-         <Appointment>
-           <ApptDate>08-Oct-2014 (AM)</ApptDate>
-         </Appointment>
-         <Appointment>
-           <ApptDate>08-Oct-2014 (PM)</ApptDate>
-         </Appointment>
-       </AppointmentList>
-    """
+    api_key = '4c497bdc-8eab-43eb-b492-ca70f2941af6'
+    api_user = 'is9999@gmail.com'
 
-    return Response(xml, mimetype='text/xml')
+    sg = sendgrid.SendGridClient(api_user, api_key)
+    message = sendgrid.Mail()
 
-    try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute("""SELECT to_char(appointment_date, 'DD-Mon-YYYY') as appointment_date, time_of_day, count(*) 
-                                FROM appointments
-                                WHERE appointment_date >= now()
-                                AND appointment_date <= now() + interval '3 months' 
-                                GROUP BY to_char(appointment_date, 'DD-Mon-YYYY'), time_of_day
-                                HAVING count(*) < 4
-                        """)
-                xml = '<AppointmentList>'
-                #for x in cur.fetchall():
-                #    result += x.appointment_date
-                rows = cur.fetchall()
-                for row in rows:
-                    xml += "<Appointment>\n<ApptDate>" + row[0] + " " + row[1] + "</ApptDate></Appointment>"
-                xml += '</AppointmentList>'
-                    
-    except Exception, err:
-        print "Error reading DB"
-        print traceback.format_exc()
-    return Response(xml, mimetype='text/xml')
+    message.add_to(recipient)
+    message.set_from(sender)
+    message.set_subject(subject)
+    message.set_html(content)
 
-def xstr(s):
-    print s
-    return '' if s is None else str(s)
+    sg.send(message)
 
-def xfirst(s):
-    if s:
-        return s[0] 
-    return ''
+def send_email(subject, sender, recipient, content):
+    return
+    msg = MIMEMultipart()
+
+    msg['Subject'] = subject
+    msg['From'] = sender
+    msg['To'] = recipient
+
+    text = MIMEText(content)
+
+    msg.attach(text)
+
+    s = smtplib.SMTP('localhost')
+    s.sendmail(sender, [recipient], msg.as_string())
+    s.quit()
+
+@cross_origin()
+@app.route('/trigger', methods=['GET'])
+def event():
+    send_email_heroku('A subject', 'jhgaw@kjkhawd.qwe', 'is9999@gmail.com', 'SOme content from heroku')
+    return 'OK'
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
