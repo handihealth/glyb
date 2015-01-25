@@ -16,9 +16,16 @@
             .when('/timeline', {
               templateUrl: 'templates/timeline.html'
             })
+            .when('/rules/new', {
+              templateUrl: 'templates/new_rule.html',
+              controller: 'RulesCtrl'
+            })
             .when('/rules', {
               templateUrl: 'templates/rules.html',
-              controller: 'RulesCtrl'
+              controller: 'ListRulesCtrl'
+            })
+            .when('/phr', {
+              templateUrl: 'templates/phr.html'
             })
             .otherwise('/timeline');
         }])
@@ -139,8 +146,8 @@
             );
         }])
         .controller('AppCtrl', ["$scope", "$compile", "$interval", "$timeout", "AppConfig", "FormResource", "SessionResource", "tmhDynamicLocale", "EhrContext",
-            "CompositionResource", "EhrSaveHelper", "QueryResource",
-            function ($scope, $compile, $interval, $timeout, AppConfig, FormResource, SessionResource, tmhDynamicLocale, EhrContext, CompositionResource, EhrSaveHelper, QueryResource) {
+            "CompositionResource", "EhrSaveHelper", "QueryResource", "$http",
+            function ($scope, $compile, $interval, $timeout, AppConfig, FormResource, SessionResource, tmhDynamicLocale, EhrContext, CompositionResource, EhrSaveHelper, QueryResource, $http) {
                 this.AppConfig = AppConfig;
 
                 $scope.$on('selectPretty', function (scope, element, attrs) {
@@ -183,6 +190,9 @@
                 };
 
                 this.saveValues = function () {
+                    console.log("Send this to the API");
+                    console.log(this.valueModel);
+                    $http.post('http://gwyb-server.herokuapp.com/trigger', this.valueModel);
                     var cr = new CompositionResource(EhrSaveHelper.prepareValueModel(this.valueModel));
                     cr.$add({templateId: this.templateId},
                         function (success) {
@@ -504,11 +514,64 @@
                 return $sce.trustAsHtml(text)
             }
         })
-        .controller('RulesCtrl', function($scope) {
+        .controller('RulesCtrl', function($scope, $http) {
+          $scope.formData = {};
+
           $scope.triggers = [
-            {code: 'AT001', title: 'Attended A&E'},
-            {code: 'AT002', title: 'Contacted'},
-            {code: 'AT003', title: 'Lab Results returned'}];
+            {code: 'AT0007', title: 'I have been admitted to A&E'},
+            {code: 'AT0008', title: 'I am in contact with the Ambulance Service'},
+            {code: 'AT0009', title: 'My lab results have been returned'}];
+
+          $scope.actions = [
+          { text: 'Send them my record summary', code: 'them' },
+          { text: 'Send an email to', code: 'email' },
+          { text: 'Send a text notification to', code: 'sms' }];
+
+          var numberOfActions = 1;
+          $scope.getNumber = function(num) {
+            return new Array(num);
+          };
+
+          $scope.getNumberOfActions = function() {
+            return numberOfActions;
+          }
+
+          $scope.appendAction = function() {
+            numberOfActions++;
+          };
+
+          $scope.removeAction = function() {
+            numberOfActions--;
+          };
+
+          $scope.postRule = function() {
+            var actions = [];
+
+            angular.forEach($scope.formData.actions, function(action) {
+              actions.push(action);
+            });
+
+            $http.post('http://gwyb-server.herokuapp.com/rules', {
+              nhsid: 7430555,
+              at: $scope.formData.atTrigger,
+              actions: actions
+            })
+              .success(function(data, status, headers, config) {
+                // this callback will be called asynchronously
+                // when the response is available
+              })
+              .error(function(data, status, headers, config) {
+                // called asynchronously if an error occurs
+                // or server returns response with an error status.
+              });
+          };
+        })
+        .controller('ListRulesCtrl', function($scope, $http) {
+          $scope.rules = [];
+          $http.get('http://gwyb.herokuapp.com/rules')
+            .success(function(data){
+              $scope.rules = data;
+            });
         })
         .directive('prettySelect', function () {
             return function (scope, element, attrs) {
