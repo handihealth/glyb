@@ -506,11 +506,14 @@
         })
         .controller('RulesCtrl', function($scope) {
           $scope.triggers = [
-            {code: 'AT001', title: 'Attended A&E'},
-            {code: 'AT002', title: 'Contacted'},
-            {code: 'AT003', title: 'Lab Results returned'}];
+            {code: 'AT001', title: 'I have been admitted to A&E'},
+            {code: 'AT002', title: 'I am in contact with the Ambulance Service'}];
+            {code: 'AT003', title: 'My lab results have been returned'}];
 
-          $scope.actions = ['Email', 'SMS'];
+          $scope.actions = [
+          { text: 'Send them my record summary', code: 'them' },
+          { text: 'Send an email to', code: 'email' },
+          { text: 'Send a text notification to', code: 'sms' }];
 
           var numberOfActions = 1;
           $scope.getNumber = function(num) {

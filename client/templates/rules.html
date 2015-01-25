@@ -16,10 +16,16 @@
 
       <div ng-repeat="i in getNumber(getNumberOfActions()) track by $index" class="form-group">
         <h3 ng-if="$index != 0">And</h3>
-        <select class="input-lg" ng-options="action as action for action in actions" ng-model="newAction">
+        <select class="input-lg" ng-options="action.code as action.text for action in actions" ng-model="newAction">
         </select>
-        <input class="input-lg" ng-if="newAction != null" type="text" ng-model="newActionValue" placeholder="Enter detail"/>
+        <input class="input-lg" ng-if="newAction == 'email'" type="email" ng-validate ng-model="newEmailAddress" placeholder="Enter email address"/>
+        <input class="input-lg" ng-if="newAction == 'sms'" type="text" ng-model="newPhoneNumber" placeholder="Enter phone number"/>
+        <div class="form-group">
+          <textarea ng-if="newAction == 'email'" ng-model="newEmailContents" class="form-control input-lg" rows="3">Email content</textarea>
+        </div>
       </div>
+
+
       <div class="form-group">
         <button ng-if="getNumberOfActions() > 1" ng-click="removeAction()" class="btn btn-warning">- Remove action</button>
         <button ng-click="appendAction()" class="btn btn-success">+ Add action</button>
