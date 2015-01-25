@@ -24,6 +24,9 @@
               templateUrl: 'templates/rules.html',
               controller: 'ListRulesCtrl'
             })
+            .when('/phr', {
+              templateUrl: 'templates/phr.html'
+            })
             .otherwise('/timeline');
         }])
         .factory("AppConfig", function () {
@@ -143,8 +146,8 @@
             );
         }])
         .controller('AppCtrl', ["$scope", "$compile", "$interval", "$timeout", "AppConfig", "FormResource", "SessionResource", "tmhDynamicLocale", "EhrContext",
-            "CompositionResource", "EhrSaveHelper", "QueryResource",
-            function ($scope, $compile, $interval, $timeout, AppConfig, FormResource, SessionResource, tmhDynamicLocale, EhrContext, CompositionResource, EhrSaveHelper, QueryResource) {
+            "CompositionResource", "EhrSaveHelper", "QueryResource", "$http",
+            function ($scope, $compile, $interval, $timeout, AppConfig, FormResource, SessionResource, tmhDynamicLocale, EhrContext, CompositionResource, EhrSaveHelper, QueryResource, $http) {
                 this.AppConfig = AppConfig;
 
                 $scope.$on('selectPretty', function (scope, element, attrs) {
@@ -187,6 +190,9 @@
                 };
 
                 this.saveValues = function () {
+                    console.log("Send this to the API");
+                    console.log(this.valueModel);
+                    $http.post('http://gwyb-server.herokuapp.com/trigger', this.valueModel);
                     var cr = new CompositionResource(EhrSaveHelper.prepareValueModel(this.valueModel));
                     cr.$add({templateId: this.templateId},
                         function (success) {
@@ -545,7 +551,7 @@
               actions.push(action);
             });
 
-            $http.post('http://gwyb.herokuapp.com/rules', {
+            $http.post('http://gwyb-server.herokuapp.com/rules', {
               nhsid: 7430555,
               at: $scope.formData.atTrigger,
               actions: actions
